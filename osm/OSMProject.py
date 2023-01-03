@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 customtkinter.set_appearance_mode("System")  
 customtkinter.set_default_color_theme("blue")  
 
-
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
@@ -19,13 +18,13 @@ class App(customtkinter.CTk):
         self.geometry(f"{1200}x{580}")
 
         # Create Grid 4 Column -> 2,3 for plotting
-        self.grid_columnconfigure(1, weight=0)
-        self.grid_columnconfigure((2, 3), weight=1)
+        self.grid_columnconfigure((0, 1, 2), weight=0)
+        self.grid_columnconfigure(3, weight=1)
         self.grid_rowconfigure((0, 1, 2), weight=1)
-        self.grid_rowconfigure(3, weight=0)
+        self.grid_rowconfigure(3, weight=1)
 
 
-        # Left Sidebar with GUI Settings and Name of the programm 
+        # Left Sidebar with GUI Settings and Name of the programm / description 
         self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
@@ -43,74 +42,129 @@ class App(customtkinter.CTk):
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(5, 20))
 
 
-        # Selection Frame for cords
+        # Main coordinate Selection Window, values are stored in self.entry_values
         self.selection_frame = customtkinter.CTkFrame(self)
         self.selection_frame.grid(row=0, column=1, rowspan=3, padx=20, pady=(20, 10), sticky="nsew")
         self.selection_frame.grid_rowconfigure(6, weight=1)
-        self.longitude_entry = customtkinter.CTkEntry(self.selection_frame, placeholder_text="Entry Longitude")
-        self.longitude_entry.grid(row=1, column=0, padx=20, pady=(10,10))
+        self.selection_frame.grid_columnconfigure(0, weight=0)
 
-        self.longitude_label = customtkinter.CTkLabel(self.selection_frame, text="Longitude")
-        self.longitude_label.grid(row=0, column=0, padx=20, pady=(10,10))
-        self.longitude_entry = customtkinter.CTkEntry(self.selection_frame, placeholder_text="Entry Longitude")
-        self.longitude_entry.grid(row=1, column=0, padx=20, pady=(10,10))
-
-        self.latidude_label = customtkinter.CTkLabel(self.selection_frame, text="Latidude")
-        self.latidude_label.grid(row=2, column=0, padx=20, pady=(10,10))
-        self.latidude_entry = customtkinter.CTkEntry(self.selection_frame, placeholder_text="Entry Latidude")
-        self.latidude_entry.grid(row=3, column=0, padx=20, pady=(10,10))
-        self.latidude_entry
-
-        self.radius_label = customtkinter.CTkLabel(self.selection_frame, text="Radius")
-        self.radius_label.grid(row=4, column=0, padx=20, pady=(10,10))
-        self.radius_entry = customtkinter.CTkEntry(self.selection_frame, placeholder_text="Entry Radius")
-        self.radius_entry.grid(row=5, column=0, padx=20, pady=(10,10))
-
+        self.labels = ["Longitude", "Latidude", "Radius"]
+        self.entrys_placehoder = ["Entry Longitude", "Entry Latidude", "Entry Radius"]
+        self.entry_values = []
+        self.results = zip(self.labels, self.entrys_placehoder)
         
-        # Status Frame
+        self.counter = 0
+        for item in self.results:
+            self.label_item = customtkinter.CTkLabel(self.selection_frame, text=item[0])
+            self.label_item.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
+            self.counter += 1
+            self.entry= customtkinter.CTkEntry(self.selection_frame, placeholder_text=item[1])
+            self.entry.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
+            self.entry_values.append(self.entry)
+            self.counter += 1
+        self.counter = 0
+
+        self.apply_butoon = customtkinter.CTkButton(self.selection_frame, text="Apply", command=self.read_initial_cords)
+        self.apply_butoon.grid(row=len(self.labels)*2, column=0, padx=20, pady=(5,10), sticky="s")
+
+        # Frame for selecting additional coordinates, stored in self.additional_latidude_values / self.additional_longitude_values
+        self.additional_cord_frame = customtkinter.CTkFrame(self)
+        self.additional_cord_frame.grid(row=0, column=2, rowspan=4, padx=(0, 20), pady=(20, 20), sticky="nsew")
+        self.additional_cord_frame.grid_rowconfigure(50, weight=1)
+        self.additional_cord_frame.grid_columnconfigure(2, weight=1)
+
+        self.add_cords_label = customtkinter.CTkLabel(self.additional_cord_frame, text="Additional Cords")
+        self.add_cords_label.grid(row=0, column=0, columnspan=2, padx=20, pady=(5,5), sticky="we")
+
+        self.add_button = customtkinter.CTkButton(self.additional_cord_frame, text="ADD", width=70, command=lambda: self.change_entrys_additional_cords(True))
+        self.add_button.grid(row=1, column=0, padx=(5,5), pady=(5,5), sticky="nw")
+        self.del_button = customtkinter.CTkButton(self.additional_cord_frame, text="DEL", width=70, command=lambda: self.change_entrys_additional_cords(False))
+        self.del_button.grid(row=1, column=1, padx=(5,5), pady=(5,5), sticky="ne")
+
+
+        # Status Frame for current work and Progress bar
         self.status_frame = customtkinter.CTkFrame(self)
         self.status_frame.grid(row=3, column=1, padx=20, rowspan=1, pady=(10,20), sticky="nsew")
-        self.status_frame.rowconfigure(1, weight=1)
-        self.progress_label = customtkinter.CTkLabel(self.status_frame, text="progress")
+        self.status_frame.grid_rowconfigure(1, weight=1)
+        self.progress_label = customtkinter.CTkLabel(self.status_frame, text="PROGRESS")
         self.progress_label.grid(row=0, column=0, padx=20, pady=10)
         self.progressbar = customtkinter.CTkProgressBar(self.status_frame)
-        self.progressbar.grid(row=1, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
+        self.progressbar.grid(row=1, column=0, padx=(20, 10), pady=(10, 20), sticky="s")
 
 
-        # Plot Frame for matplotlib
+        # Plot Window to create a matplotlib plot
         self.image_frame = customtkinter.CTkFrame(self)
-        self.image_frame.grid(row=0, column=2, rowspan=4, columnspan=2, padx=(0, 20), pady=(20, 20), sticky="nsew")
+        self.image_frame.grid(row=0, column=3, rowspan=4, columnspan=1, padx=(0, 20), pady=(20, 20), sticky="nsew")
         self.image_frame.grid_rowconfigure(4, weight=1)
+        self.image_frame.grid_columnconfigure(0, weight=1)
         self.placeholder = customtkinter.CTkLabel(self.image_frame, text="Plot")
         self.placeholder.grid(row=0, column=0, padx=20, pady=(20, 10))
 
         self.figure = Figure(figsize=(4,4), dpi=100)
         self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
-        self.bal = self.figure.add_subplot()
-        self.bal.plot()
-        self.figure_canvas.get_tk_widget().grid(row=1, column=0, padx=20, pady=(10,10))
+        bal = self.figure.add_subplot()
+        bal.plot()
+        self.figure_canvas.get_tk_widget().grid(row=1, column=0, padx=20, pady=10)
     
-        # Set values
+        
+        # Values to initialize by laoding the Window
         self.progressbar.configure(mode="indeterminnate")
         self.progressbar.start() # Change when task starting
         self.appearance_mode_optionemenu.set("System")
         self.scaling_optionemenu.set("100%")
 
+        self.row_number_of_item = 1 # Value for additional cord first row
+        self.additional_latidude_values = []
+        self.additional_longitude_values = []
+
     
     # Functions
+    # Change the appearance from the GUI
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
+    # Changing the scaling of every item
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
 
+    # Returns the main coordinate Values
+    def read_initial_cords(self):
+        for entry in zip(self.entry_values, self.labels):
+            value = float(entry[0].get())
+            print(value, entry[1])
 
+    # Adds and remove additional entry fields
+    def change_entrys_additional_cords(self, add: bool):
+        if add:
+            self.add_button.grid_forget()
+            self.del_button.grid_forget()
+            self.entry= customtkinter.CTkEntry(self.additional_cord_frame, placeholder_text="longitude", width=70)
+            self.entry.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="w")
+            self.additional_longitude_values.append(self.entry)
+            self.entry= customtkinter.CTkEntry(self.additional_cord_frame, placeholder_text="latidude", width=70)
+            self.entry.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="w")
+            self.additional_latidude_values.append(self.entry)
+            self.row_number_of_item += 1
+            self.add_button.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="nw")
+            self.del_button.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="ne")
+        else:
+            self.additional_latidude_values[-1].grid_forget()
+            self.additional_latidude_values.pop(-1)
+            self.additional_longitude_values[-1].grid_forget()
+            self.additional_longitude_values.pop(-1)
+            self.add_button.grid_forget()
+            self.del_button.grid_forget()
+            self.row_number_of_item -= 1
 
-# start tkinter as own application and avoid contex-name error
+            self.add_button.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="nw")
+            self.del_button.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="ne")
+
+            
+
+# start tkinter as script 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-   
-
+    
 
