@@ -22,7 +22,7 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure((0, 1, 2), weight=0)
         self.grid_columnconfigure(3, weight=1)
         self.grid_rowconfigure((0, 1, 2), weight=1)
-        self.grid_rowconfigure(3, weight=1)
+        self.grid_rowconfigure(3, weight=0)
 
 
         # Left Sidebar with GUI Settings and Name of the programm / description 
@@ -46,8 +46,7 @@ class App(customtkinter.CTk):
         # Main coordinate Selection Window, values are stored in self.entry_values
         self.selection_frame = customtkinter.CTkFrame(self)
         self.selection_frame.grid(row=0, column=1, rowspan=3, padx=20, pady=(20, 10), sticky="nsew")
-        self.selection_frame.grid_rowconfigure(6, weight=1)
-        self.selection_frame.grid_columnconfigure(0, weight=0)
+        self.selection_frame.grid_rowconfigure(7, weight=1)
 
         self.labels = ["Longitude", "Latidude", "Radius"]
         self.entrys_placehoder = ["Entry Longitude", "Entry Latidude", "Entry Radius"]
@@ -66,7 +65,7 @@ class App(customtkinter.CTk):
         
 
         self.apply_butoon = customtkinter.CTkButton(self.selection_frame, text="Apply", command=self.read_initial_cords)
-        self.apply_butoon.grid(row=len(self.labels)*2, column=0, padx=(20,20), pady=(5,10), sticky="swe")
+        self.apply_butoon.grid(row=7, column=0, padx=(20,20), pady=(5,10), sticky="sew")
 
         # Frame for selecting additional coordinates, stored in self.additional_latidude_values / self.additional_longitude_values
         self.additional_cord_frame = customtkinter.CTkFrame(self)
@@ -86,19 +85,19 @@ class App(customtkinter.CTk):
 
 
         # Status Frame for current work and Progress bar
-        self.status_frame = customtkinter.CTkFrame(self)
-        self.status_frame.grid(row=3, column=1, padx=20, rowspan=1, pady=(10,20), sticky="nsew")
-        self.status_frame.grid_rowconfigure(1, weight=1)
+        self.status_frame = customtkinter.CTkFrame(self, height=100)
+        self.status_frame.grid(row=3, column=1, padx=20, pady=(10,20), sticky="nsew")
+        self.status_frame.grid_rowconfigure(2, weight=1)
         self.progress_label = customtkinter.CTkLabel(self.status_frame, text="PROGRESS")
         self.progress_label.grid(row=0, column=0, padx=20, pady=10)
         self.progressbar = customtkinter.CTkProgressBar(self.status_frame)
-        self.progressbar.grid(row=1, column=0, padx=(20, 10), pady=(10, 20), sticky="s")
+        self.progressbar.grid(row=1, column=0, padx=(20, 20), pady=(10, 20), sticky="sew")
 
 
         # Plot Window to create a matplotlib plot
         self.image_frame = customtkinter.CTkFrame(self)
         self.image_frame.grid(row=0, column=3, rowspan=4, columnspan=1, padx=(0, 20), pady=(20, 20), sticky="nsew")
-        #self.image_frame.grid_rowconfigure(4, weight=1)
+        self.image_frame.grid_rowconfigure(4, weight=1)
         self.image_frame.grid_columnconfigure(0, weight=1)
         self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=self.plot_entry)
         self.plot_button.grid(row=0, column=0, padx=20, pady=(20, 10))
@@ -123,13 +122,13 @@ class App(customtkinter.CTk):
         self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
         heat = self.figure.add_subplot()
         heat.imshow(a, cmap="hot", interpolation="nearest")
-        self.figure_canvas.get_tk_widget().grid(row=1, column=0, padx=20, pady=10)
+        self.figure_canvas.get_tk_widget().grid(row=1, rowspan=3, column=0, padx=20, pady=10)
 
     # Change the appearance from the GUI
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
-    # Changing the scaling of every item
+    # Change the scale of every item
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
@@ -140,7 +139,7 @@ class App(customtkinter.CTk):
             value = float(entry[0].get())
             print(value, entry[1])
 
-    # Adds and remove additional entry fields
+    # Add and remove additional entry fields
     def change_entrys_additional_cords(self, add: bool):
         if add:
             self.add_button.grid_forget()
