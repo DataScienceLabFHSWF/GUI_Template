@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.messagebox
 import customtkinter
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
@@ -62,10 +63,10 @@ class App(customtkinter.CTk):
             self.entry.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
             self.entry_values.append(self.entry)
             self.counter += 1
-        self.counter = 0
+        
 
         self.apply_butoon = customtkinter.CTkButton(self.selection_frame, text="Apply", command=self.read_initial_cords)
-        self.apply_butoon.grid(row=len(self.labels)*2, column=0, padx=20, pady=(5,10), sticky="s")
+        self.apply_butoon.grid(row=len(self.labels)*2, column=0, padx=(20,20), pady=(5,10), sticky="swe")
 
         # Frame for selecting additional coordinates, stored in self.additional_latidude_values / self.additional_longitude_values
         self.additional_cord_frame = customtkinter.CTkFrame(self)
@@ -76,9 +77,11 @@ class App(customtkinter.CTk):
         self.add_cords_label = customtkinter.CTkLabel(self.additional_cord_frame, text="Additional Cords")
         self.add_cords_label.grid(row=0, column=0, columnspan=2, padx=20, pady=(5,5), sticky="we")
 
-        self.add_button = customtkinter.CTkButton(self.additional_cord_frame, text="ADD", width=70, command=lambda: self.change_entrys_additional_cords(True))
+        self.add_button = customtkinter.CTkButton(self.additional_cord_frame, text="ADD", width=70, 
+                command=lambda: self.change_entrys_additional_cords(True))
         self.add_button.grid(row=1, column=0, padx=(5,5), pady=(5,5), sticky="nw")
-        self.del_button = customtkinter.CTkButton(self.additional_cord_frame, text="DEL", width=70, command=lambda: self.change_entrys_additional_cords(False))
+        self.del_button = customtkinter.CTkButton(self.additional_cord_frame, text="DEL", width=70, 
+                command=lambda: self.change_entrys_additional_cords(False))
         self.del_button.grid(row=1, column=1, padx=(5,5), pady=(5,5), sticky="ne")
 
 
@@ -95,21 +98,14 @@ class App(customtkinter.CTk):
         # Plot Window to create a matplotlib plot
         self.image_frame = customtkinter.CTkFrame(self)
         self.image_frame.grid(row=0, column=3, rowspan=4, columnspan=1, padx=(0, 20), pady=(20, 20), sticky="nsew")
-        self.image_frame.grid_rowconfigure(4, weight=1)
+        #self.image_frame.grid_rowconfigure(4, weight=1)
         self.image_frame.grid_columnconfigure(0, weight=1)
-        self.placeholder = customtkinter.CTkLabel(self.image_frame, text="Plot")
-        self.placeholder.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=self.plot_entry)
+        self.plot_button.grid(row=0, column=0, padx=20, pady=(20, 10))
 
-        self.figure = Figure(figsize=(4,4), dpi=100)
-        self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
-        bal = self.figure.add_subplot()
-        bal.plot()
-        self.figure_canvas.get_tk_widget().grid(row=1, column=0, padx=20, pady=10)
-    
         
         # Values to initialize by laoding the Window
-        self.progressbar.configure(mode="indeterminnate")
-        self.progressbar.start() # Change when task starting
+        self.progressbar.configure(mode="determinate")
         self.appearance_mode_optionemenu.set("System")
         self.scaling_optionemenu.set("100%")
 
@@ -119,6 +115,16 @@ class App(customtkinter.CTk):
 
     
     # Functions
+    # Example plot function with random heatmap 
+    def plot_entry(self):
+        a = np.random.random((16, 16))
+
+        self.figure = Figure(figsize=(4,4), dpi=100, facecolor="#2A68A3")
+        self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
+        heat = self.figure.add_subplot()
+        heat.imshow(a, cmap="hot", interpolation="nearest")
+        self.figure_canvas.get_tk_widget().grid(row=1, column=0, padx=20, pady=10)
+
     # Change the appearance from the GUI
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
