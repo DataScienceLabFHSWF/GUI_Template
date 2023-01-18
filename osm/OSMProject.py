@@ -1,14 +1,33 @@
 import tkinter as tk
 import tkinter.messagebox
 import customtkinter
+import csv
+import threading
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 import matplotlib.pyplot as plt
+scmap = plt.cm.gist_earth
+
 
 customtkinter.set_appearance_mode("System")  
 customtkinter.set_default_color_theme("blue")  
+
+# general funcions
+
+# Extract Cords from a given File - Later file from cord selection
+def extract_xyz_cords():
+    csvData = []
+    with open("osm/geo_data.xyz", "r") as csvFile:
+        csvReader = csv.reader(csvFile, delimiter=" ")
+        for csvRow in csvReader:
+            csvData.append(csvRow[0:3])
+    csvData = np.asarray(csvData)
+    csvData = csvData.astype(np.float_)
+    x, y, z = csvData[:,0], csvData[:,1], csvData[:,2]
+    return x, y, z
+
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -49,13 +68,13 @@ class App(customtkinter.CTk):
         self.selection_frame.grid_rowconfigure(7, weight=1)
 
         self.labels = ["Longitude", "Latidude", "Radius"]
-        self.entrys_placehoder = ["Entry Longitude", "Entry Latidude", "Entry Radius"]
+        self.entrys_placehoder = ["Entry Longitude", "Entry Latitude", "Entry Radius"]
         self.entry_values = []
         self.results = zip(self.labels, self.entrys_placehoder)
         
         self.counter = 0
         for item in self.results:
-            self.label_item = customtkinter.CTkLabel(self.selection_frame, text=item[0])
+            self.label_item = customtkinter.CTkLabel(self.selection_frame, text=item[0], font=(customtkinter.CTkFont(size=15)))
             self.label_item.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
             self.counter += 1
             self.entry= customtkinter.CTkEntry(self.selection_frame, placeholder_text=item[1])
@@ -90,7 +109,7 @@ class App(customtkinter.CTk):
         self.status_frame.grid_rowconfigure(2, weight=1)
         self.progress_label = customtkinter.CTkLabel(self.status_frame, text="PROGRESS")
         self.progress_label.grid(row=0, column=0, padx=20, pady=10)
-        self.progressbar = customtkinter.CTkProgressBar(self.status_frame)
+        self.progressbar = customtkinter.CTkProgressBar(self.status_frame, mode="intermidiate")
         self.progressbar.grid(row=1, column=0, padx=(20, 20), pady=(10, 20), sticky="sew")
 
 
@@ -99,12 +118,11 @@ class App(customtkinter.CTk):
         self.image_frame.grid(row=0, column=3, rowspan=4, columnspan=1, padx=(0, 20), pady=(20, 20), sticky="nsew")
         self.image_frame.grid_rowconfigure(4, weight=1)
         self.image_frame.grid_columnconfigure(0, weight=1)
-        self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=self.plot_entry)
+        self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=lambda: threading.Thread(target=self.plot_entry).start())
         self.plot_button.grid(row=0, column=0, padx=20, pady=(20, 10))
 
         
         # Values to initialize by laoding the Window
-        self.progressbar.configure(mode="determinate")
         self.appearance_mode_optionemenu.set("System")
         self.scaling_optionemenu.set("100%")
 
@@ -116,12 +134,24 @@ class App(customtkinter.CTk):
     # Functions
     # Example plot function with random heatmap 
     def plot_entry(self):
-        a = np.random.random((16, 16))
-
-        self.figure = Figure(figsize=(4,4), dpi=100, facecolor="#2A68A3")
-        self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
+        x, y, z = extract_xyz_cords()
+        x=np.unique(x)
+        y=np.unique(y)
+        X,Y = np.meshgrid(x,y)
+        Z=z.reshape(len(x),len(y))
+        Z=np.transpose(Z)
+        data = Z    
+        self.figure = plt.Figure(figsize=(4,4), dpi=100, facecolor="#2A68A3")
         heat = self.figure.add_subplot()
-        heat.imshow(a, cmap="hot", interpolation="nearest")
+        self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
+       
+        heat.contour(X, Y, Z, 7, linewidths = 0.5, colors = 'k')
+        heat.imshow(data, cmap = scmap, interpolation = 'gaussian', origin='lower',\
+                aspect='equal',  extent = [min(x), max(x), min(y), max(y)] ) 
+        heat.set_title( "Heatmap Sample", fontsize=15 )
+        heat.set_xlabel("X", fontsize=10)
+        heat.set_ylabel("Y", fontsize=10)
+        #heat.set_colorbar()
         self.figure_canvas.get_tk_widget().grid(row=1, rowspan=3, column=0, padx=20, pady=10)
 
     # Change the appearance from the GUI
@@ -132,6 +162,7 @@ class App(customtkinter.CTk):
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
+
 
     # Returns the main coordinate Values
     def read_initial_cords(self):
