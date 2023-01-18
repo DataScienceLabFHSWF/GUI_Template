@@ -19,7 +19,7 @@ customtkinter.set_default_color_theme("blue")
 # Extract Cords from a given File - Later file from cord selection
 def extract_xyz_cords():
     csvData = []
-    with open("osm/geo_data.xyz", "r") as csvFile:
+    with open("osm/geo_data.txt", "r") as csvFile:
         csvReader = csv.reader(csvFile, delimiter=" ")
         for csvRow in csvReader:
             csvData.append(csvRow[0:3])
