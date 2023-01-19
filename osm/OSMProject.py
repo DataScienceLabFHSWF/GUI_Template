@@ -6,37 +6,19 @@ import threading
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 import matplotlib.pyplot as plt
-scmap = plt.cm.gist_earth
-
-
 customtkinter.set_appearance_mode("System")  
-customtkinter.set_default_color_theme("blue")  
+customtkinter.set_default_color_theme("blue")
+scmap = plt.cm.gist_earth
+MPLBACKEND = FigureCanvasTkAgg
 
-# general funcions
-
-# Extract Cords from a given File - Later file from cord selection
-def extract_xyz_cords():
-    csvData = []
-    with open("osm/geo_data.txt", "r") as csvFile:
-        csvReader = csv.reader(csvFile, delimiter=" ")
-        for csvRow in csvReader:
-            csvData.append(csvRow[0:3])
-    csvData = np.asarray(csvData)
-    csvData = csvData.astype(np.float_)
-    x, y, z = csvData[:,0], csvData[:,1], csvData[:,2]
-    return x, y, z
-
-
+# GUI
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-
         # Create Window
         self.title("Irgendeine Name für das Fenster")
         self.geometry(f"{1200}x{580}")
-
         # Create Grid 4 Column -> 2,3 for plotting
         self.grid_columnconfigure((0, 1, 2), weight=0)
         self.grid_columnconfigure(3, weight=1)
@@ -82,9 +64,9 @@ class App(customtkinter.CTk):
             self.entry_values.append(self.entry)
             self.counter += 1
         
-
         self.apply_butoon = customtkinter.CTkButton(self.selection_frame, text="Apply", command=self.read_initial_cords)
         self.apply_butoon.grid(row=7, column=0, padx=(20,20), pady=(5,10), sticky="sew")
+
 
         # Frame for selecting additional coordinates, stored in self.additional_latidude_values / self.additional_longitude_values
         self.additional_cord_frame = customtkinter.CTkFrame(self)
@@ -118,7 +100,7 @@ class App(customtkinter.CTk):
         self.image_frame.grid(row=0, column=3, rowspan=4, columnspan=1, padx=(0, 20), pady=(20, 20), sticky="nsew")
         self.image_frame.grid_rowconfigure(4, weight=1)
         self.image_frame.grid_columnconfigure(0, weight=1)
-        self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=lambda: threading.Thread(target=self.plot_entry).start())
+        self.plot_button = customtkinter.CTkButton(self.image_frame, text="Plot", command=self.plot_entry)
         self.plot_button.grid(row=0, column=0, padx=20, pady=(20, 10))
 
         
@@ -130,33 +112,19 @@ class App(customtkinter.CTk):
         self.additional_latidude_values = []
         self.additional_longitude_values = []
 
-    
+
     # Functions
     # Example plot function with random heatmap 
     def plot_entry(self):
-        x, y, z = extract_xyz_cords()
-        x=np.unique(x)
-        y=np.unique(y)
-        X,Y = np.meshgrid(x,y)
-        Z=z.reshape(len(x),len(y))
-        Z=np.transpose(Z)
-        data = Z    
-        self.figure = plt.Figure(figsize=(4,4), dpi=100, facecolor="#2A68A3")
-        heat = self.figure.add_subplot()
-        self.figure_canvas = FigureCanvasTkAgg(self.figure, self.image_frame)
-       
-        heat.contour(X, Y, Z, 7, linewidths = 0.5, colors = 'k')
-        heat.imshow(data, cmap = scmap, interpolation = 'gaussian', origin='lower',\
-                aspect='equal',  extent = [min(x), max(x), min(y), max(y)] ) 
-        heat.set_title( "Heatmap Sample", fontsize=15 )
-        heat.set_xlabel("X", fontsize=10)
-        heat.set_ylabel("Y", fontsize=10)
-        #heat.set_colorbar()
-        self.figure_canvas.get_tk_widget().grid(row=1, rowspan=3, column=0, padx=20, pady=10)
+        fig = plot_xyz_cords()
+        self.canvas= FigureCanvasTkAgg(fig, master=self.image_frame)
+        self.canvas.get_tk_widget().grid(row=1, rowspan=3, column=0, padx=20, pady=10)
+
 
     # Change the appearance from the GUI
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
+
 
     # Change the scale of every item
     def change_scaling_event(self, new_scaling: str):
@@ -169,6 +137,7 @@ class App(customtkinter.CTk):
         for entry in zip(self.entry_values, self.labels):
             value = float(entry[0].get())
             print(value, entry[1])
+
 
     # Add and remove additional entry fields
     def change_entrys_additional_cords(self, add: bool):
@@ -197,10 +166,54 @@ class App(customtkinter.CTk):
             self.del_button.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="ne")
 
             
-
-# start tkinter as script 
 if __name__ == "__main__":
+
+# LOGICAL FUNCTIONS
+#-----------------------------------------------------------------------
+# Extract Cords from a given File - Later file from cord selection
+    def extract_xyz_cords():
+        csvData = []
+        with open("osm/geo_data.txt", "r") as csvFile:
+            csvReader = csv.reader(csvFile, delimiter=" ")
+            for csvRow in csvReader:
+                csvData.append(csvRow[0:3])
+        csvData = np.asarray(csvData)
+        csvData = csvData.astype(np.float_)
+        x, y, z = csvData[:,0], csvData[:,1], csvData[:,2]
+        return x, y, z
+
+# Creates the topography map 
+    def plot_xyz_cords():
+        x,y,z = extract_xyz_cords()
+        x=np.unique(x)
+        y=np.unique(y)
+        X,Y = np.meshgrid(x,y)
+        Z=z.reshape(len(x),len(y))
+        Z=np.transpose(Z)
+        data = Z  
+        fig = plt.figure(figsize=(4,4), dpi = 100, facecolor="#2A68A3")
+        ax = fig.add_subplot(111)
+        ax.contour(X, Y, Z, 7, linewidths = 0.5, colors = 'k')
+        ax.imshow(data, cmap = scmap, interpolation = 'gaussian', origin='lower',\
+                    aspect='equal',  extent = [min(x), max(x), min(y), max(y)] ) 
+        ax.set_title("Topography Sample", fontsize=15)
+        ax.set_xlabel("X", fontsize=10)
+        ax.set_ylabel("Y", fontsize=10)
+        return fig
+
+    # Destroy tk-frames and Canvas drawing
+    def on_closing():
+        app.destroy()
+        exit()
+
+
+    # creating app instance an mainloop it
     app = App()
+    app.protocol("WM_DELETE_WINDOW", on_closing)
     app.mainloop()
     
 
+'''
+Der Plot kann nicht in einem seperaten Thread erstellt werden da matplotlib nicht
+"Threadsciher" ist.
+'''
