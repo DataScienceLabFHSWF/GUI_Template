@@ -49,6 +49,7 @@ class App(customtkinter.CTk):
         self.selection_frame = customtkinter.CTkFrame(self)
         self.selection_frame.grid(row=0, column=1, rowspan=3, padx=20, pady=(20, 10), sticky="nsew")
         self.selection_frame.grid_rowconfigure(7, weight=1)
+        self.selection_frame.grid_columnconfigure(1, weight=1)
 
         self.labels = ["Longitude", "Latidude", "Radius"]
         self.entrys_placehoder = ["Entry Longitude", "Entry Latitude", "Entry Radius"]
@@ -58,15 +59,15 @@ class App(customtkinter.CTk):
         self.counter = 0
         for item in self.results:
             self.label_item = customtkinter.CTkLabel(self.selection_frame, text=item[0], font=(customtkinter.CTkFont(size=15)))
-            self.label_item.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
+            self.label_item.grid(row=self.counter, column=1, padx=20, pady=(5,5), sticky="w")
             self.counter += 1
             self.entry= customtkinter.CTkEntry(self.selection_frame, placeholder_text=item[1])
-            self.entry.grid(row=self.counter, column=0, padx=20, pady=(5,5), sticky="w")
+            self.entry.grid(row=self.counter, column=1, padx=20, pady=(5,5), sticky="ew")
             self.entry_values.append(self.entry)
             self.counter += 1
         
         self.apply_butoon = customtkinter.CTkButton(self.selection_frame, text="Apply", command=self.read_initial_cords)
-        self.apply_butoon.grid(row=7, column=0, padx=(20,20), pady=(5,10), sticky="sew")
+        self.apply_butoon.grid(row=7, column=1, padx=(20,20), pady=(5,10), sticky="sew")
 
 
         # Frame for selecting additional coordinates, stored in self.additional_latidude_values / self.additional_longitude_values
@@ -85,15 +86,19 @@ class App(customtkinter.CTk):
                 command=lambda: self.change_entrys_additional_cords(False))
         self.del_button.grid(row=1, column=1, padx=(5,5), pady=(5,5), sticky="ne")
 
+        self.apply_n_cords_button = customtkinter.CTkButton(self.additional_cord_frame, text="Apply")
+        self.apply_n_cords_button.grid(row=2, column=0, columnspan=2, padx=(5,5), pady=(5,5), sticky="new")
+
 
         # Status Frame for current work and Progress bar
         self.status_frame = customtkinter.CTkFrame(self, height=100)
         self.status_frame.grid(row=3, column=1, padx=20, pady=(10,20), sticky="nsew")
         self.status_frame.grid_rowconfigure(2, weight=1)
-        self.progress_label = customtkinter.CTkLabel(self.status_frame, text="PROGRESS")
-        self.progress_label.grid(row=0, column=0, padx=20, pady=10)
+        self.status_frame.grid_columnconfigure(1, weight=1)
+        self.progress_label = customtkinter.CTkLabel(self.status_frame, text="Waiting for data input")
+        self.progress_label.grid(row=0, column=1, pady=10, sticky="ew")
         self.progressbar = customtkinter.CTkProgressBar(self.status_frame, mode="intermidiate")
-        self.progressbar.grid(row=1, column=0, padx=(20, 20), pady=(10, 20), sticky="sew")
+        self.progressbar.grid(row=1, column=0, columnspan=2, padx=(20, 20), pady=(10, 20), sticky="sew")
 
 
         # Plot Window to create a matplotlib plot
@@ -133,7 +138,7 @@ class App(customtkinter.CTk):
         customtkinter.set_widget_scaling(new_scaling_float)
 
 
-    # Returns the main coordinate Values
+    # Return the main coordinate Values
     def read_initial_cords(self):
         for entry in zip(self.entry_values, self.labels):
             value = float(entry[0].get())
@@ -142,29 +147,40 @@ class App(customtkinter.CTk):
 
     # Add and remove additional entry fields
     def change_entrys_additional_cords(self, add: bool):
-        if add:
+        if add and len(self.additional_latidude_values) <= 10:
             self.add_button.grid_forget()
             self.del_button.grid_forget()
+            self.apply_n_cords_button.grid_forget()
+
             self.entry= customtkinter.CTkEntry(self.additional_cord_frame, placeholder_text="longitude", width=70)
             self.entry.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="w")
             self.additional_longitude_values.append(self.entry)
             self.entry= customtkinter.CTkEntry(self.additional_cord_frame, placeholder_text="latidude", width=70)
             self.entry.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="w")
             self.additional_latidude_values.append(self.entry)
+
             self.row_number_of_item += 1
             self.add_button.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="nw")
             self.del_button.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="ne")
-        else:
+            self.apply_n_cords_button.grid(row=self.row_number_of_item + 1, column=0, columnspan=2, padx=(5,5), pady=(5,5), sticky="new")
+        elif add == False:
             self.additional_latidude_values[-1].grid_forget()
             self.additional_latidude_values.pop(-1)
             self.additional_longitude_values[-1].grid_forget()
             self.additional_longitude_values.pop(-1)
+
             self.add_button.grid_forget()
             self.del_button.grid_forget()
-            self.row_number_of_item -= 1
+            self.apply_n_cords_button.grid_forget()
 
+            self.row_number_of_item -= 1
             self.add_button.grid(row=self.row_number_of_item, column=0, padx=(5,5), pady=(5,5), sticky="nw")
             self.del_button.grid(row=self.row_number_of_item, column=1, padx=(5,5), pady=(5,5), sticky="ne")
+            self.apply_n_cords_button.grid(row=self.row_number_of_item + 1, column=0, columnspan=2, padx=(5,5), pady=(5,5), sticky="new")
+            if len(self.additional_latidude_values) <= 10:
+                self.progress_label.configure(text=" ", sticky="ew")
+        else:
+            self.progress_label.configure(text="Too many Values", sticky="ew")
 
             
 if __name__ == "__main__":
@@ -183,7 +199,7 @@ if __name__ == "__main__":
         x, y, z = csvData[:,0], csvData[:,1], csvData[:,2]
         return x, y, z
 
-# Creates the topography map 
+# Create the topography map 
     def plot_xyz_cords():
         x,y,z = extract_xyz_cords()
         x=np.unique(x)
