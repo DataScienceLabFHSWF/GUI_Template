@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+
 customtkinter.set_appearance_mode("System")  
 customtkinter.set_default_color_theme("blue")
 scmap = plt.cm.gist_earth
@@ -194,11 +195,13 @@ if __name__ == "__main__":
         fig = plt.figure(figsize=(4,4), dpi = 100, facecolor="#2A68A3")
         ax = fig.add_subplot(111)
         ax.contour(X, Y, Z, 7, linewidths = 0.5, colors = 'k')
-        ax.imshow(data, cmap = scmap, interpolation = 'gaussian', origin='lower',\
+        im = ax.imshow(data, cmap = scmap, interpolation = 'gaussian', origin='lower',\
                     aspect='equal',  extent = [min(x), max(x), min(y), max(y)] ) 
         ax.set_title("Topography Sample", fontsize=15)
         ax.set_xlabel("X", fontsize=10)
         ax.set_ylabel("Y", fontsize=10)
+        fig.colorbar(im)                    # Adding CB
+        fig.autofmt_xdate(rotation=45)      # rotate x labels
         return fig
 
     # Destroy tk-frames and Canvas drawing
@@ -215,5 +218,5 @@ if __name__ == "__main__":
 
 '''
 Der Plot kann nicht in einem seperaten Thread erstellt werden da matplotlib nicht
-"Threadsciher" ist.
+"Threadsicher" ist.
 '''
