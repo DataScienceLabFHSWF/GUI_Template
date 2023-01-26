@@ -180,7 +180,7 @@ class App(customtkinter.CTk):
             if len(self.additional_latidude_values) <= 10:
                 self.progress_label.configure(text=" ", sticky="ew")
         else:
-            self.progress_label.configure(text="Too many Values", sticky="ew")
+            self.progress_label.configure(text="Too many Values")
 
             
 if __name__ == "__main__":
